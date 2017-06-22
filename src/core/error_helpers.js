@@ -104,7 +104,59 @@ p5._friendlyFileLoadError = function (errorType, filePath) {
   (errorInfo.message || '') + ' or running a local server.';
   report(message, errorInfo.method, FILE_LOAD);
 };
-
+/**
+* Validates Number type parameters
+* param  {String}               message the words to be said
+* param  {String}               func    the name of the function to link
+* param  {Integer/Color String} color   CSS color string or error type
+*
+* return  {boolean}             message the words to be said
+* return  {String}              err     the type of error
+* return  {Integer}             index   the location of error
+* return  {String}              message friendly err console log
+*
+* example:
+*  var a;
+*  ellipse(10,10,a,5);
+* console ouput:
+*  "It looks like ellipse received an empty variable in spot #2."
+*
+* example:
+*  ellipse(10,"foo",5,5);
+* console output:
+*  "ellipse was expecting a number for parameter #1,
+*           received "foo" instead."
+*/
+function validateNumParameters(func, input, length) {
+  var message;
+  if (arguments.length < 3) {
+    message = 'Missing input values for validating numeric parameters';
+    return [false, 'INIT_VALNUMPAR_FAIL', 0, message];
+  }
+  var args = new Array(length);
+  for (var i = 0; i < input.length; ++i) {
+    args[i] = input[i];
+  }
+  for (var p = 0; p < length; p++) {
+    var argType = typeof(args[p]);
+    message = '';
+    if ('undefined' === argType || null === argType) {
+      message = 'FES: It looks like ' + func +
+        ' received an empty variable in spot #' + p +
+        ' (zero-based index). If not intentional, this is often a problem' +
+        ' with scope: [link to scope].';
+      return [false, 'EMPTY_VAR', p, message];
+    } else if (argType !== 'number') {
+      message = 'FES: ' + func + ' was expecting a number' +
+        ' for parameter #' + p + ' (zero-based index), received ';
+      // Wrap strings in quotes
+      message += 'string' === argType ? '"' + args[p] + '"' : args[p];
+      message += ' instead.';
+      return [false, 'WRONG_TYPE', p, message];
+    }
+  }
+  return [true];
+}
 function friendlyWelcome() {
   // p5.js brand - magenta: #ED225D
   var astrixBgColor = 'transparent';
@@ -253,6 +305,7 @@ function helpForMisusedAtTopLevelCode(e, log) {
 
 // Exposing this primarily for unit testing.
 p5.prototype._helpForMisusedAtTopLevelCode = helpForMisusedAtTopLevelCode;
+p5.prototype._validateNumParameters = validateNumParameters;
 
 if (document.readyState !== 'complete') {
   window.addEventListener('error', helpForMisusedAtTopLevelCode, false);
